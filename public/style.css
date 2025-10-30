@@ -1,0 +1,211 @@
+/* ===============================
+   Global Styles
+================================ */
+body {
+  font-family: "Poppins", sans-serif;
+  background: #f9fafc;
+  color: #333;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 1rem;
+}
+
+h4, h5 {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ===============================
+   Card
+================================ */
+.card {
+  border: none;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 1.5rem;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+  border-bottom: none;
+  padding: 1rem 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.card-header.bg-primary {
+  background: linear-gradient(135deg, #4a90e2, #357ab8);
+}
+
+.card-header.bg-success {
+  background: linear-gradient(135deg, #28a745, #1d7a31);
+}
+
+/* ===============================
+   Form Elements
+================================ */
+label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #444;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #ddd !important;
+  border-radius: 10px !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #4a90e2 !important;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
+  outline: none;
+}
+
+button {
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  border-radius: 10px !important;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* ===============================
+   Table
+================================ */
+.table {
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 0.9rem;
+}
+
+.table thead {
+  background: #343a40;
+  color: #fff;
+  letter-spacing: 0.3px;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  vertical-align: middle;
+}
+
+.table-striped tbody tr:nth-child(odd) {
+  background-color: #f4f7fb;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #e9f2ff;
+  transition: background 0.2s ease;
+}
+
+/* ===============================
+   Section Titles
+================================ */
+h5 {
+  margin-top: 1.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 2px solid #eee;
+  font-size: 1.1rem;
+  color: #4a4a4a;
+}
+
+/* ===============================
+   Responsive Design
+================================ */
+
+/* Tablets */
+@media (max-width: 992px) {
+  .row {
+    flex-direction: column;
+  }
+
+  .col-md-3,
+  .col-md-4,
+  .col-md-5,
+  .col-md-6 {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .card-header h4,
+  .card-header h5 {
+    font-size: 1rem;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 576px) {
+  h4 {
+    font-size: 1.2rem;
+  }
+
+  h5 {
+    font-size: 1rem;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table tr {
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 0.5rem;
+  }
+
+  .table td {
+    text-align: right;
+    padding-left: 50%;
+    position: relative;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0.75rem;
+    width: 50%;
+    text-align: left;
+    font-weight: 600;
+    color: #444;
+  }
+}

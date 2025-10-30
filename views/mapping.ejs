@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mapping Data</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 8px 12px; border: 1px solid #ccc; text-align: left; }
+    th { background: #f5f5f5; }
+    button { margin-top: 15px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h2>Mapping File: <%= fileName %></h2>
+
+  <form id="mappingForm" action="/hypernet-lippo/save-mapping" method="POST">
+    <input type="hidden" name="fileName" value="<%= fileName %>">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Header File</th>
+          <th>Mapping ke Field DB</th>
+        </tr>
+      </thead>
+      <!-- <tbody id="mappingTable"></tbody> -->
+       <tbody>
+          <% csvHeaders.forEach(header => { %>
+            <tr>
+              <td><%= header %></td>
+              <td>
+                <select name="mapping[<%= header %>]">
+                  <option value="">-- pilih field DB --</option>
+                  <% dbFields.forEach(field => { %>
+                    <option value="<%= field %>"><%= field %></option>
+                  <% }) %>
+                </select>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+    </table>
+
+    <button type="submit">Submit Mapping</button>
+  </form>
+
+  <script>
+    const fileName = "<%= fileName %>";
+
+    // Fetch daftar field dari API
+    fetch("/api/db-fields")
+      .then(res => res.json())
+      .then(dbFields => {
+        // Ambil CSV header
+        return fetch(`/uploads/${fileName}`)
+          .then(res => res.text())
+          .then(csvText => {
+            const parsed = Papa.parse(csvText, { header: true });
+            const headers = parsed.meta.fields || [];
+            const tableBody = document.getElementById("mappingTable");
+
+            headers.forEach(hdr => {
+              const row = document.createElement("tr");
+
+              // Kolom Header
+              const tdHeader = document.createElement("td");
+              tdHeader.textContent = hdr;
+              row.appendChild(tdHeader);
+
+              // Kolom Dropdown
+              const tdSelect = document.createElement("td");
+              const select = document.createElement("select");
+              select.name = `mapping[${hdr}]`;
+
+              // Opsi default
+              const defaultOpt = document.createElement("option");
+              defaultOpt.value = "";
+              defaultOpt.textContent = "-- pilih field --";
+              select.appendChild(defaultOpt);
+
+              // Isi dropdown dengan daftar field dari DB
+              dbFields.forEach(f => {
+                const opt = document.createElement("option");
+                opt.value = f;
+                opt.textContent = f;
+                select.appendChild(opt);
+              });
+
+              tdSelect.appendChild(select);
+              row.appendChild(tdSelect);
+
+              tableBody.appendChild(row);
+            });
+
+            // Panggil filter awal
+            updateDropdownOptions();
+          });
+      })
+      .catch(err => {
+        console.error("Gagal load dbFields:", err);
+      });
+
+    function updateDropdownOptions() {
+      const selects = document.querySelectorAll("select[name^='mapping']");
+      const chosen = Array.from(selects).map(s => s.value).filter(v => v !== "");
+
+      selects.forEach(select => {
+        Array.from(select.options).forEach(opt => {
+          if (opt.value === "") return; // skip default
+          if (chosen.includes(opt.value) && opt.value !== select.value) {
+            opt.style.display = "none";
+          } else {
+            opt.style.display = "block";
+          }
+        });
+      });
+    }
+
+    // Event listener supaya update setiap kali ada perubahan
+    document.addEventListener("change", e => {
+      if (e.target.matches("select[name^='mapping']")) {
+        updateDropdownOptions();
+      }
+    });
+  </script>
+</body>
+</html>

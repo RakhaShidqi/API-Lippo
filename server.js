@@ -71,6 +71,7 @@ if (process.env.NODE_ENV === "development" && app._router) {
 
 // ✅ Start server
 const PORT = process.env.PORT || 4000;
+const HOST = process.env.DB_HOST || 'localhost';
 app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://${HOST}:${PORT}`);
 });

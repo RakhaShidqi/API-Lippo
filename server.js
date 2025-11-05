@@ -2,6 +2,7 @@
 const express = require("express");
 const path = require("path");
 const helmet = require("helmet");
+const cors = require("cors"); // ✅ tambahkan cors
 const db = require("./config/db");
 require("dotenv").config();
 
@@ -13,19 +14,16 @@ const upload = require("./middlewares/upload");
 
 const app = express();
 
-// ✅ Helmet CSP + Referrer Policy
+// ✅ Matikan CORS Restriction — izinkan semua origin
+app.use(cors());
+
+// ✅ Helmet tanpa CSP (agar tidak blok script/style dari luar)
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        connectSrc: ["'self'", "http://localhost:*","http://api-lmi.hypernet.co.id:*", "https://cdn.jsdelivr.net"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "blob:", "data:"],
-        imgSrc: ["'self'", "data:", "blob:"],
-      },
-    },
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    referrerPolicy: { policy: "no-referrer-when-downgrade" },
   })
 );
 
@@ -41,12 +39,10 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // supaya folder uploads bisa diakses
 
-// auth Routes
-app.use("/auth", authRoutes);
-
 // ✅ Routes
+app.use("/auth", authRoutes);
 app.use("/", loginRoutes); // halaman login
-app.use("/api/hypernet-lippo",apiLimiter, authRoutes);
+app.use("/api/hypernet-lippo", apiLimiter, authRoutes);
 app.use("/hypernet-lippo", lippoRoutes);
 
 // ✅ Dashboard page
@@ -60,30 +56,18 @@ app.use((err, req, res, next) => {
   res.status(500).send("Internal Server Error - Check server logs");
 });
 
-// ✅ Debug registered routes (only in dev mode)
-if (process.env.NODE_ENV === "development") {
-  app.use(
-    helmet({
-      contentSecurityPolicy: false,
-      crossOriginOpenerPolicy: false,
-      crossOriginEmbedderPolicy: false,
-    })
-  );
-} else {
-  app.use(helmet());
+// ✅ Debug registered routes (optional)
+if (process.env.NODE_ENV === "development" && app._router) {
+  app._router.stack
+    .filter(r => r.route)
+    .forEach(r =>
+      console.log(`${Object.keys(r.route.methods)} -> ${r.route.path}`)
+    );
 }
-
-// if (process.env.NODE_ENV === "development" && app._router) {
-//   app._router.stack
-//     .filter(r => r.route)
-//     .forEach(r =>
-//       console.log(`${Object.keys(r.route.methods)} -> ${r.route.path}`)
-//     );
-// }
 
 // ✅ Start server
 const PORT = process.env.PORT || 4000;
-const DB_HOST = process.env.DB_HOST || 'localhost';
+const DB_HOST = process.env.DB_HOST || "localhost";
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://${DB_HOST}:${PORT}`);
 });

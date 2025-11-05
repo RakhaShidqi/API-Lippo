@@ -61,13 +61,25 @@ app.use((err, req, res, next) => {
 });
 
 // ✅ Debug registered routes (only in dev mode)
-if (process.env.NODE_ENV === "development" && app._router) {
-  app._router.stack
-    .filter(r => r.route)
-    .forEach(r =>
-      console.log(`${Object.keys(r.route.methods)} -> ${r.route.path}`)
-    );
+if (process.env.NODE_ENV === "development") {
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginOpenerPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    })
+  );
+} else {
+  app.use(helmet());
 }
+
+// if (process.env.NODE_ENV === "development" && app._router) {
+//   app._router.stack
+//     .filter(r => r.route)
+//     .forEach(r =>
+//       console.log(`${Object.keys(r.route.methods)} -> ${r.route.path}`)
+//     );
+// }
 
 // ✅ Start server
 const PORT = process.env.PORT || 4000;

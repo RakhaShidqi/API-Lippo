@@ -19,7 +19,7 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        connectSrc: ["'self'", "http://localhost:*", "https://cdn.jsdelivr.net"],
+        connectSrc: ["'self'", "http://localhost:*","http://api-lmi.hypernet.co.id:*", "https://cdn.jsdelivr.net"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "blob:", "data:"],
         imgSrc: ["'self'", "data:", "blob:"],

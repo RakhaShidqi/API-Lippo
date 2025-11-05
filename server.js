@@ -21,8 +21,8 @@ app.use(
         defaultSrc: ["'self'"],
         connectSrc: ["'self'", "http://localhost:*", "https://cdn.jsdelivr.net"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
-        imgSrc: ["'self'", "data:"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "blob:", "data:"],
+        imgSrc: ["'self'", "data:", "blob:"],
       },
     },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
@@ -71,7 +71,7 @@ if (process.env.NODE_ENV === "development" && app._router) {
 
 // ✅ Start server
 const PORT = process.env.PORT || 4000;
-const HOST = process.env.DB_HOST || 'localhost';
+const DB_HOST = process.env.DB_HOST || 'localhost';
 app.listen(PORT, () => {
-  console.log(`✅ Server running at http://${HOST}:${PORT}`);
+  console.log(`✅ Server running at http://${DB_HOST}:${PORT}`);
 });

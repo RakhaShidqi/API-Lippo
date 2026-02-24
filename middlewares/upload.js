@@ -1,4 +1,3 @@
-// middleware/uploadMiddleware.js
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -6,13 +5,13 @@ const fs = require("fs");
 // Pastikan folder uploads ada
 const uploadDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // Konfigurasi storage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir); // folder penyimpanan
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueName =
@@ -21,23 +20,32 @@ const storage = multer.diskStorage({
   },
 });
 
-// Filter file (hanya izinkan CSV)
+// Filter file
 function fileFilter(req, file, cb) {
-  const allowedTypes = [".csv"]; // bisa ditambah ".xlsx", ".txt", dll
-  const ext = path.extname(file.originalname).toLowerCase();
+  const allowedExts = [".csv", ".xlsx", ".xls"];
+  const allowedMimes = [
+    "text/csv",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/octet-stream"
+  ];
 
-  if (!allowedTypes.includes(ext)) {
-    return cb(new Error("Only CSV files are allowed"), false);
+  const ext = path.extname(file.originalname).toLowerCase();
+  const mime = file.mimetype.toLowerCase();
+
+  if (allowedExts.includes(ext) || allowedMimes.includes(mime)) {
+    return cb(null, true);
   }
-  cb(null, true);
+
+  return cb(new Error("Only CSV and Excel files (.csv, .xlsx, .xls) are allowed"), false);
 }
 
-// Batas ukuran file max 5MB
+// Buat instance multer
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
+// EXPORT: Ekspor upload sebagai middleware siap pakai
 module.exports = upload;
-  

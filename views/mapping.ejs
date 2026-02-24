@@ -2,127 +2,419 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mapping Data</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapping Data - Lippo Revenue</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Papa Parse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { padding: 8px 12px; border: 1px solid #ccc; text-align: left; }
-    th { background: #f5f5f5; }
-    button { margin-top: 15px; padding: 8px 16px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    
+    .mapping-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+    
+    .card-header {
+      background: linear-gradient(135deg, #4361ee, #4f46e5);
+      color: white;
+      padding: 1.25rem 1.5rem;
+    }
+    
+    .card-header h3 {
+      margin: 0;
+      font-weight: 700;
+      font-size: 1.5rem;
+    }
+    
+    .card-header p {
+      margin: 0.5rem 0 0;
+      opacity: 0.9;
+      font-size: 0.9rem;
+    }
+    
+    .card-body {
+      padding: 1.5rem;
+    }
+    
+    .info-alert {
+      background: #e8f0fe;
+      border-left: 4px solid #4361ee;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .info-alert i {
+      font-size: 1.5rem;
+      color: #4361ee;
+    }
+    
+    .table-responsive {
+      border-radius: 12px;
+      border: 1px solid #e9ecef;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    th {
+      background: #2b3d4f;
+      color: white;
+      font-weight: 600;
+      padding: 1rem;
+      text-align: left;
+    }
+    
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid #e9ecef;
+      background: white;
+    }
+    
+    tr:hover td {
+      background: #f8f9ff;
+    }
+    
+    .header-name {
+      font-weight: 600;
+      color: #2b3d4f;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .header-name i {
+      color: #4361ee;
+    }
+    
+    select {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      border: 2px solid #e9ecef;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      background: white;
+      cursor: pointer;
+    }
+    
+    select:focus {
+      outline: none;
+      border-color: #4361ee;
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+    
+    .btn-submit {
+      background: linear-gradient(135deg, #4361ee, #4f46e5);
+      border: none;
+      color: white;
+      padding: 0.8rem 2rem;
+      border-radius: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+    
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-back {
+      background: white;
+      border: 2px solid #e9ecef;
+      color: #495057;
+      padding: 0.6rem 1.5rem;
+      border-radius: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .btn-back:hover {
+      background: #f8f9fa;
+      border-color: #4361ee;
+      color: #4361ee;
+    }
+    
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1.5rem;
+    }
+    
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+    
+    .stats i {
+      color: #4361ee;
+      margin-right: 0.25rem;
+    }
+    
+    .stats span {
+      font-weight: 700;
+      color: #2b3d4f;
+      margin-left: 0.25rem;
+    }
   </style>
 </head>
 <body>
-  <h2>Mapping File: <%= fileName %></h2>
+  <div class="mapping-container">
+    <div class="card">
+      <!-- Header -->
+      <div class="card-header">
+        <h3><i class="bi bi-diagram-3 me-2"></i> Field Mapping</h3>
+        <p><i class="bi bi-file-earmark-spreadsheet me-1"></i> File: <strong><%= fileName %></strong> (Tipe: <%= fileType || 'csv' %>)</p>
+      </div>
+      
+      <!-- Body -->
+      <div class="card-body">
+        <!-- Info Alert -->
+        <div class="info-alert">
+          <i class="bi bi-info-circle"></i>
+          <div>
+            <strong>Petunjuk:</strong> Pilih field database yang sesuai untuk setiap kolom. 
+            Setiap field hanya bisa dipilih satu kali.
+          </div>
+        </div>
+        
+        <!-- Form Mapping -->
+        <form id="mappingForm" action="/hypernet-lippo/save-mapping" method="POST">
+          <input type="hidden" name="fileName" value="<%= fileName %>">
+          <input type="hidden" name="fileType" value="<%= fileType || 'csv' %>">
+          
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th><i class="bi bi-file-text me-2"></i>Header File</th>
+                  <th><i class="bi bi-database me-2"></i>Mapping ke Field Database</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 
+                // Looping untuk setiap header
+                if (csvHeaders && csvHeaders.length > 0) {
+                  csvHeaders.forEach(function(header, index) { 
+                %>
+                  <tr>
+                    <td>
+                      <div class="header-name">
+                        <i class="bi bi-tag"></i>
+                        <%= header %>
+                      </div>
+                    </td>
+                    <td>
+                      <select 
+                        class="mapping-select" 
+                        name="mapping[<%= header %>]" 
+                        id="select-<%= index %>"
+                        onchange="updateStats()"
+                      >
+                        <option value="">-- Pilih Field --</option>
+                        <% 
+                        if (dbFields && dbFields.length > 0) {
+                          dbFields.forEach(function(field) { 
+                        %>
+                          <option value="<%= field %>"><%= field %></option>
+                        <% 
+                          });
+                        } 
+                        %>
+                      </select>
+                    </td>
+                  </tr>
+                <% 
+                  });
+                } else { 
+                %>
+                  <tr>
+                    <td colspan="2" class="text-center py-4">
+                      <i class="bi bi-exclamation-triangle"></i>
+                      Tidak ada header yang ditemukan
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </form>
+        
+        <!-- Footer -->
+        <div class="footer">
+          <div class="stats">
+            <div>
+              <i class="bi bi-grid-3x3-gap-fill"></i>
+              Total Kolom: <span id="totalColumns"><%= csvHeaders ? csvHeaders.length : 0 %></span>
+            </div>
+            <div>
+              <i class="bi bi-check-circle-fill"></i>
+              Terpilih: <span id="selectedCount">0</span>
+            </div>
+          </div>
+          
+          <div>
+            <a href="/lippo" class="btn-back me-2">
+              <i class="bi bi-arrow-left"></i> Kembali
+            </a>
+            <button type="submit" form="mappingForm" class="btn-submit" id="submitBtn">
+              <i class="bi bi-check-lg"></i> Submit Mapping
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  <form id="mappingForm" action="/hypernet-lippo/save-mapping" method="POST">
-    <input type="hidden" name="fileName" value="<%= fileName %>">
-
-    <table>
-      <thead>
-        <tr>
-          <th>Header File</th>
-          <th>Mapping ke Field DB</th>
-        </tr>
-      </thead>
-      <!-- <tbody id="mappingTable"></tbody> -->
-       <tbody>
-          <% csvHeaders.forEach(header => { %>
-            <tr>
-              <td><%= header %></td>
-              <td>
-                <select name="mapping[<%= header %>]">
-                  <option value="">-- pilih field DB --</option>
-                  <% dbFields.forEach(field => { %>
-                    <option value="<%= field %>"><%= field %></option>
-                  <% }) %>
-                </select>
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-    </table>
-
-    <button type="submit">Submit Mapping</button>
-  </form>
-
+  <!-- JavaScript -->
   <script>
-    const fileName = "<%= fileName %>";
+    // Inisialisasi
+    document.addEventListener('DOMContentLoaded', function() {
+      updateStats();
+      
+      // Auto-suggest untuk field umum
+      autoSuggestFields();
+    });
 
-    // Fetch daftar field dari API
-    fetch("/api/db-fields")
-      .then(res => res.json())
-      .then(dbFields => {
-        // Ambil CSV header
-        return fetch(`/uploads/${fileName}`)
-          .then(res => res.text())
-          .then(csvText => {
-            const parsed = Papa.parse(csvText, { header: true });
-            const headers = parsed.meta.fields || [];
-            const tableBody = document.getElementById("mappingTable");
-
-            headers.forEach(hdr => {
-              const row = document.createElement("tr");
-
-              // Kolom Header
-              const tdHeader = document.createElement("td");
-              tdHeader.textContent = hdr;
-              row.appendChild(tdHeader);
-
-              // Kolom Dropdown
-              const tdSelect = document.createElement("td");
-              const select = document.createElement("select");
-              select.name = `mapping[${hdr}]`;
-
-              // Opsi default
-              const defaultOpt = document.createElement("option");
-              defaultOpt.value = "";
-              defaultOpt.textContent = "-- pilih field --";
-              select.appendChild(defaultOpt);
-
-              // Isi dropdown dengan daftar field dari DB
-              dbFields.forEach(f => {
-                const opt = document.createElement("option");
-                opt.value = f;
-                opt.textContent = f;
-                select.appendChild(opt);
-              });
-
-              tdSelect.appendChild(select);
-              row.appendChild(tdSelect);
-
-              tableBody.appendChild(row);
-            });
-
-            // Panggil filter awal
-            updateDropdownOptions();
-          });
-      })
-      .catch(err => {
-        console.error("Gagal load dbFields:", err);
-      });
-
-    function updateDropdownOptions() {
-      const selects = document.querySelectorAll("select[name^='mapping']");
-      const chosen = Array.from(selects).map(s => s.value).filter(v => v !== "");
-
+    // Fungsi untuk update statistik
+    function updateStats() {
+      const selects = document.querySelectorAll('.mapping-select');
+      let selected = 0;
+      
       selects.forEach(select => {
-        Array.from(select.options).forEach(opt => {
-          if (opt.value === "") return; // skip default
-          if (chosen.includes(opt.value) && opt.value !== select.value) {
-            opt.style.display = "none";
-          } else {
-            opt.style.display = "block";
-          }
-        });
+        if (select.value) {
+          selected++;
+        }
       });
+      
+      document.getElementById('selectedCount').textContent = selected;
+      
+      // Enable/disable submit button
+      const submitBtn = document.getElementById('submitBtn');
+      if (submitBtn) {
+        submitBtn.disabled = selected === 0;
+      }
     }
 
-    // Event listener supaya update setiap kali ada perubahan
-    document.addEventListener("change", e => {
-      if (e.target.matches("select[name^='mapping']")) {
-        updateDropdownOptions();
+    // Auto-suggest field berdasarkan nama header
+    function autoSuggestFields() {
+      const commonMappings = {
+        'unique': 'unique_id',
+        'key': 'unique_id',
+        'id': 'id_customer',
+        'customer': 'customer_name',
+        'name': 'customer_name',
+        'tenant': 'tenant_name',
+        'mall': 'mall_name',
+        'address': 'ship_address',
+        'ship': 'ship_address',
+        'bast': 'bast_date',
+        'start': 'start',
+        'end': 'end',
+        'period': 'period',
+        'month': 'month',
+        'price': 'price_per_month',
+        'payment': 'status_payment',
+        'rev': 'rev_lmi',
+        'lmi': 'rev_lmi'
+      };
+      
+      const rows = document.querySelectorAll('tbody tr');
+      
+      rows.forEach(row => {
+        const headerCell = row.querySelector('td:first-child .header-name');
+        const select = row.querySelector('select');
+        
+        if (headerCell && select) {
+          const headerText = headerCell.textContent.trim().toLowerCase();
+          
+          for (const [keyword, field] of Object.entries(commonMappings)) {
+            if (headerText.includes(keyword)) {
+              // Cek apakah field sudah dipilih di select lain
+              const isUsed = Array.from(document.querySelectorAll('.mapping-select')).some(
+                s => s !== select && s.value === field
+              );
+              
+              if (!isUsed) {
+                select.value = field;
+                break;
+              }
+            }
+          }
+        }
+      });
+      
+      updateStats();
+    }
+
+    // Handle form submit
+    document.getElementById('mappingForm').addEventListener('submit', function(e) {
+      const selected = document.querySelectorAll('.mapping-select[value!=""]').length;
+      
+      if (selected === 0) {
+        e.preventDefault();
+        alert('Pilih minimal satu field mapping!');
+        return;
       }
+      
+      // Tampilkan loading
+      const btn = document.getElementById('submitBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+      btn.disabled = true;
+      
+      // Form akan submit secara normal
     });
   </script>
 </body>

@@ -1,13 +1,26 @@
 // routes/loginRoutes.js
 const express = require("express");
 const router = express.Router();
-const loginController = require("../controllers/loginController");
 
-// 👉 Form login (GET)
-router.get("/", loginController.loginView);
+// Halaman login
+router.get("/login", (req, res) => {
+  res.render("login", { 
+    title: "Login",
+    error: null 
+  });
+});
 
-// 👉 Proses login (POST) bisa ditambahkan kalau perlu
-const { login } = require("../controllers/authController");
-router.post("/login", login);
+// Handle login form submission (optional - jika menggunakan form)
+router.post("/login", (req, res) => {
+  const { username, password } = req.body;
+  
+  // Redirect ke API login atau handle di sini
+  res.redirect("/auth/login");
+});
+
+// Root route - redirect ke login atau dashboard
+router.get("/", (req, res) => {
+  res.redirect("/login");
+});
 
 module.exports = router;

@@ -1,34 +1,36 @@
-// middleware/generateToken.js
+// middleware/generateToken.js - Versi Sederhana
 const jwt = require("jsonwebtoken");
 
-/**
- * Middleware untuk generate token JWT
- * Bisa dipanggil lewat route misalnya: GET /api/generate-token
- */
 module.exports = (req, res) => {
   try {
     if (!process.env.JWT_SECRET) {
-      throw new Error("JWT_SECRET is missing in environment variables");
+      throw new Error("JWT_SECRET is missing");
     }
 
+    // Default payload
     const payload = {
-      username: "apiClient", // default identity
-      role: "system",
+      id: 1,
+      username: "apiClient",
+      email: "client@example.com",
+      name: "API Client",
+      role: "system"
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "1d", // token berlaku 1 hari
+      expiresIn: "365d" // 1 tahun
     });
 
     return res.json({
-      message: "✅ Token generated successfully",
-      token,
+      success: true,
+      message: "✅ Token generated successfully (valid for 1 year)",
+      token: token
     });
+
   } catch (err) {
-    console.error("❌ Token generation error:", err.message);
+    console.error("❌ Error:", err.message);
     return res.status(500).json({
-      message: "❌ Failed to generate token",
-      error: err.message,
+      success: false,
+      message: "❌ Failed to generate token"
     });
   }
 };

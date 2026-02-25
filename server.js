@@ -20,84 +20,38 @@ const app = express();
 // MIDDLEWARE CONFIGURATION
 // ============================================
 
-// SIMPLIFIED CORS CONFIGURATION - INI YANG DIPERBAIKI
-app.use((req, res, next) => {
-  // Izinkan semua origin di development
-  const allowedOrigins = [
-    'http://localhost:4000',
-    'http://127.0.0.1:4000',
-    'http://10.254.245.2:4000',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://10.254.245.2:3000'
-  ];
-
-  const origin = req.headers.origin;
-  
-  // Set CORS headers untuk semua response
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  } else if (process.env.NODE_ENV === 'development') {
-    // Di development, izinkan semua origin
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-  } else {
-    // Di production, hanya origin tertentu
-    res.setHeader('Access-Control-Allow-Origin', 'https://api-lmi.hypernet.co.id');
-  }
-  
-  // Header CORS penting lainnya
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With, Origin');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Range, X-Content-Range');
-  res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours cache for preflight
-
-  // Handle preflight OPTIONS request
-  if (req.method === 'OPTIONS') {
-    console.log('🔧 OPTIONS preflight request from:', origin);
-    return res.status(200).end();
-  }
-
-  next();
-});
-
-// Gunakan cors package sebagai backup
+// CORS configuration
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc)
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
     
+    // List allowed origins (sesuaikan dengan domain Anda)
     const allowedOrigins = [
       'http://localhost:4000',
       'http://127.0.0.1:4000',
-      'http://10.254.245.2:4000',
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://10.254.245.2:3000',
-      'https://api-lmi.hypernet.co.id'
+      'http://api-lmi.hypernet.co.id'
+      // Tambahkan domain production di sini
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
-      console.log('❌ CORS blocked origin:', origin);
-      callback(null, false);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
-  exposedHeaders: ["Content-Range", "X-Content-Range"],
-  optionsSuccessStatus: 200,
-  preflightContinue: false
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 }));
 
-// Helmet security - DENGAN CORS YANG SESUAI
+app.options(/.*/, cors());
+
+// Helmet security
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
   crossOriginOpenerPolicy: false,
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // Izinkan resource diakses cross-origin
   referrerPolicy: { policy: "no-referrer-when-downgrade" },
 }));
 
@@ -112,21 +66,26 @@ const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'your-session-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
-  name: 'lippo.sid',
+  name: 'lippo.sid', // Custom session cookie name
   cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true, // Prevent XSS attacks
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
     maxAge: 24 * 60 * 60 * 1000, // 24 jam
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'none', // 'none' untuk cross-site di development
-    domain: process.env.NODE_ENV === 'production' ? '.hypernet.co.id' : undefined
+    sameSite: 'lax' // Proteksi CSRF
   }
 };
 
-// Untuk development dengan CORS, set sameSite = 'none' dan secure = false
-if (process.env.NODE_ENV !== 'production') {
-  sessionConfig.cookie.sameSite = 'none';
-  sessionConfig.cookie.secure = false; // HTTP di development
-}
+// Tambahkan store untuk production (gunakan Redis/MySQL untuk scaling)
+// if (process.env.NODE_ENV === 'production') {
+//   const MySQLStore = require('express-mysql-session')(session);
+//   sessionConfig.store = new MySQLStore({
+//     host: process.env.DB_HOST,
+//     port: 3306,
+//     user: process.env.DB_USER,
+//     password: process.env.DB_PASS,
+//     database: process.env.DB_NAME
+//   });
+// }
 
 app.use(session(sessionConfig));
 
@@ -137,7 +96,7 @@ app.use(session(sessionConfig));
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Static Files
+// Static Files - Pastikan folder public ada
 const publicPath = path.join(__dirname, "public");
 if (!fs.existsSync(publicPath)) {
   fs.mkdirSync(publicPath, { recursive: true });
@@ -146,42 +105,36 @@ if (!fs.existsSync(publicPath)) {
 app.use(express.static(publicPath));
 
 // ============================================
-// REQUEST LOGGER MIDDLEWARE
+// REQUEST LOGGER MIDDLEWARE (Development)
 // ============================================
-app.use((req, res, next) => {
-  console.log(`📨 ${req.method} ${req.url} - ${new Date().toISOString()}`);
-  console.log(`   Origin: ${req.headers.origin || 'No origin'}`);
-  console.log(`   User-Agent: ${req.headers['user-agent']?.substring(0, 50)}...`);
-  if (req.session && req.session.user) {
-    console.log(`   User: ${req.session.user.email}`);
-  }
-  next();
-});
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    console.log(`📨 ${req.method} ${req.url} - ${new Date().toISOString()}`);
+    if (req.session && req.session.user) {
+      console.log(`👤 User: ${req.session.user.email}`);
+    }
+    next();
+  });
+}
 
 // ============================================
 // ROUTES
 // ============================================
 
-// 1. Auth Routes
+// 1. Auth Routes - untuk autentikasi
 app.use("/auth", authRoutes);
 
-// 2. Lippo Routes - dengan CORS headers tambahan untuk DELETE
-app.use("/hypernet-lippo", (req, res, next) => {
-  // Log untuk method DELETE
-  if (req.method === 'DELETE') {
-    console.log('🗑️ DELETE request received for:', req.url);
-    console.log('   Headers:', req.headers);
-  }
-  next();
-}, lippoRoutes);
+// 2. Lippo Routes - untuk semua operasi data Lippo
+app.use("/hypernet-lippo", lippoRoutes);
 
-// 3. Login Routes
+// 3. Login Routes - untuk halaman login
 app.use("/", loginRoutes);
 
 // 4. Protected Dashboard Routes
 app.get("/hypernet-lippo", (req, res) => {
+  // Cek apakah user sudah login via session
   if (!req.session.user) {
-    console.log("🔒 Unauthorized access to /hypernet-lippo, redirecting to login");
+    console.log("🔒 Unauthorized access to /lippo, redirecting to login");
     return res.redirect('/login');
   }
   
@@ -199,6 +152,7 @@ app.get("/api-docs", (req, res) => {
   });
 });
 
+// 6. GET API Documentation (khusus method GET)
 app.get("/api-docs-get", (req, res) => {
   res.render("api-docs-get", { 
     title: "GET API Documentation - Lippo Revenue"
@@ -211,12 +165,6 @@ app.get("/api-docs-get", (req, res) => {
 
 // Test server
 app.get("/test", (req, res) => {
-  // Set CORS headers explicitly for test
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  
   res.json({
     success: true,
     message: "Server is running",
@@ -224,21 +172,16 @@ app.get("/test", (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     session: req.session ? 'Active' : 'Inactive',
     user: req.session?.user || null,
-    cors: {
-      origin: req.headers.origin,
-      method: req.method,
-      headers: req.headers
+    routes: {
+      auth: "/auth/*",
+      lippo: "/hypernet-lippo/*",
+      login: "/* (login pages)"
     }
   });
 });
 
 // Debug session
 app.get("/debug-session", (req, res) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  
   res.json({
     sessionID: req.sessionID,
     session: req.session,
@@ -247,43 +190,8 @@ app.get("/debug-session", (req, res) => {
   });
 });
 
-// Test CORS
-app.options("/test-cors", (req, res) => {
-  res.status(200).end();
-});
-
-app.all("/test-cors", (req, res) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  
-  res.json({
-    success: true,
-    method: req.method,
-    message: `CORS test successful for ${req.method}`,
-    headers: req.headers
-  });
-});
-
-// Test DELETE
-app.delete("/test-delete/:id", (req, res) => {
-  console.log('🗑️ Test DELETE:', req.params.id);
-  
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  
-  res.json({
-    success: true,
-    message: `DELETE test successful for ID: ${req.params.id}`,
-    data: { id: req.params.id, deleted: true }
-  });
-});
-
-// Debug routes (development only)
-if (process.env.NODE_ENV !== 'production') {
+// Debug routes (hanya untuk development)
+if (process.env.NODE_ENV === 'development') {
   app.get("/debug-routes", (req, res) => {
     const routes = [];
     
@@ -314,12 +222,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 // 404 Handler
 app.use((req, res) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
+  // Jika request dari browser (minta HTML)
   if (req.accepts('html')) {
     return res.status(404).send(`
       <html>
@@ -327,12 +230,13 @@ app.use((req, res) => {
         <body style="font-family: Arial; text-align: center; padding: 50px;">
           <h1>404 - Page Not Found</h1>
           <p>The page you are looking for does not exist.</p>
-          <p><a href="/hypernet-lippo">Go to Dashboard</a> | <a href="/login">Login</a></p>
+          <p><a href="/lippo">Go to Dashboard</a> | <a href="/login">Login</a></p>
         </body>
       </html>
     `);
   }
   
+  // Jika request API (minta JSON)
   res.status(404).json({ 
     success: false, 
     message: "Route not found",
@@ -345,12 +249,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   console.error("🔥 ERROR:", err.stack || err.message);
   
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
+  // Jangan tampilkan error detail di production
   const errorMessage = process.env.NODE_ENV === 'production' 
     ? "Internal Server Error" 
     : err.message;
@@ -358,7 +257,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ 
     success: false, 
     message: errorMessage,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
 
@@ -380,20 +279,18 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================
 const PORT = process.env.PORT || 4000;
-const HOST = process.env.HOST || '0.0.0.0'; // Bind ke semua interface
+const HOST = process.env.HOST || 'localhost';
 
 const server = app.listen(PORT, HOST, () => {
   console.log(`\n🚀 ========================================`);
   console.log(`🚀 Server running at http://${HOST}:${PORT}`);
   console.log(`🚀 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🚀 CORS: ${process.env.NODE_ENV === 'production' ? 'Restricted' : 'Development mode'}`);
   console.log(`🚀 ========================================`);
-  console.log(`📊 Dashboard: http://${HOST}:${PORT}/hypernet-lippo`);
+  console.log(`📊 Dashboard: http://${HOST}:${PORT}/lippo`);
   console.log(`🔐 Auth routes: http://${HOST}:${PORT}/auth/*`);
   console.log(`📦 Lippo routes: http://${HOST}:${PORT}/hypernet-lippo/*`);
   console.log(`📚 API Docs: http://${HOST}:${PORT}/api-docs`);
-  console.log(`🔍 Test CORS: http://${HOST}:${PORT}/test-cors`);
-  console.log(`🗑️ Test DELETE: http://${HOST}:${PORT}/test-delete/123`);
+  console.log(`🔍 Debug routes: http://${HOST}:${PORT}/debug-routes`);
   console.log(`🚀 ========================================\n`);
 });
 

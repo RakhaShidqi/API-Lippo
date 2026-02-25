@@ -133,6 +133,9 @@ router.post("/api/cache/clear", auth, lippoController.clearCache);
 // LEGACY ROUTES - AUTO DETECT
 // ======================
 router.get("/data", limiter, requireApiAuth, lippoController.getAllData);
+router.get("/data/:id", limiter, requireApiAuth, lippoController.getDataById);
+router.put("/data/:id", lippoController.updateData);
+router.delete("/data/:id",lippoController.deleteData);
 router.get("/customer/idCustomer", limiter, requireApiAuth, lippoController.getDataByIdCustomer);
 router.get("/mall/all", limiter, requireApiAuth, lippoController.getAllData);
 router.get("/mall/mallName", limiter, requireApiAuth, lippoController.getDataByMall);

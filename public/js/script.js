@@ -154,6 +154,79 @@ async function editData(id) {
   }
 }
 
+// Fungsi untuk mengambil data berdasarkan ID
+async function getDataById(id) {
+  try {
+    const response = await fetch(`http://localhost:4000/hypernet-lippo/data/${id}`, {
+      method: 'GET',
+      headers: { 
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      return result.data; // Kembalikan object data
+    } else {
+      throw new Error('Data tidak ditemukan');
+    }
+    
+  } catch (error) {
+    console.error('Error getDataById:', error);
+    throw error;
+  }
+}
+
+// Fungsi untuk update data
+async function updateData(id, updatedData) {
+  try {
+    console.log('Updating data ID:', id);
+    console.log('Data to update:', updatedData);
+
+    const response = await fetch(`http://localhost:4000/hypernet-lippo/data/${id}`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(updatedData)
+    });
+
+    // Cek response
+    const responseText = await response.text();
+    console.log('Raw response:', responseText);
+
+    // Parse JSON
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse JSON:', responseText);
+      throw new Error('Server returned invalid JSON');
+    }
+
+    if (!response.ok) {
+      throw new Error(result.message || `HTTP error ${response.status}`);
+    }
+
+    if (result.success) {
+      console.log('Update successful:', result.data);
+      return result.data;
+    } else {
+      throw new Error(result.message || 'Update failed');
+    }
+
+  } catch (error) {
+    console.error('Error in updateData:', error);
+    throw error;
+  }
+}
+
 // ==========================
 // 🔥 FUNGSI SAVE EDIT
 // ==========================
@@ -230,6 +303,7 @@ async function saveEdit() {
 async function deleteData(id) {
   console.log('🗑️ Deleting data ID:', id);
   
+  // Konfirmasi dengan SweetAlert
   const result = await Swal.fire({
     title: 'Hapus Data',
     text: 'Apakah Anda yakin ingin menghapus data ini?',
@@ -238,40 +312,104 @@ async function deleteData(id) {
     confirmButtonColor: '#d33',
     cancelButtonColor: '#3085d6',
     confirmButtonText: 'Ya, hapus!',
-    cancelButtonText: 'Batal'
+    cancelButtonText: 'Batal',
+    reverseButtons: true
   });
   
-  if (result.isConfirmed) {
-    try {
-      Swal.fire({
-        title: 'Menghapus...',
-        text: 'Mohon tunggu',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
+  if (!result.isConfirmed) return;
+
+  try {
+    // Tampilkan loading
+    Swal.fire({
+      title: 'Menghapus...',
+      text: 'Mohon tunggu',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+
+    // 1. TAMBAHKAN BASE URL
+    const baseUrl = 'http://localhost:4000'; // Sesuaikan dengan port server Anda
+    const url = `${baseUrl}/hypernet-lippo/data/${id}`;
+    
+    console.log('📡 Request URL:', url);
+
+    // 2. TAMBAHKAN HEADERS (termasuk token)
+    const headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    };
+
+    // Ambil token dari localStorage (sesuaikan dengan cara auth Anda)
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      console.log('🔑 Token added to request');
+    } else {
+      console.warn('⚠️ No token found in localStorage');
+    }
+
+    // 3. KIRIM REQUEST DELETE
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: headers,
+      credentials: 'include' // Jika menggunakan cookies/session
+    });
+
+    console.log('📥 Response status:', response.status);
+
+    // 4. HANDLE RESPONSE
+    let responseData;
+    const contentType = response.headers.get('content-type');
+    
+    if (contentType && contentType.includes('application/json')) {
+      responseData = await response.json();
+      console.log('📦 Response data:', responseData);
+    } else {
+      // Jika response bukan JSON
+      const textResponse = await response.text();
+      console.log('📝 Text response:', textResponse);
+      
+      if (response.ok) {
+        responseData = { success: true, message: 'Data berhasil dihapus' };
+      } else {
+        throw new Error(`Server returned: ${textResponse.substring(0, 100)}`);
+      }
+    }
+
+    // Tutup loading
+    Swal.close();
+
+    // 5. CEK RESPONSE
+    if (response.ok && (responseData?.success || responseData?.success !== false)) {
+      // Sukses
+      await Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Data berhasil dihapus',
+        timer: 1500,
+        showConfirmButton: false
       });
       
-      const response = await fetch(`/hypernet-lippo/data/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      // Refresh data
+      refreshData();
       
-      const data = await response.json();
-      Swal.close();
-      
-      if (data.success) {
-        Swal.fire({
-          icon: 'success',
-          title: 'Terhapus!',
-          text: 'Data berhasil dihapus',
-          timer: 1500
-        });
-        refreshData();
-      } else {
-        Swal.fire({ icon: 'error', title: 'Error!', text: data.message || 'Gagal menghapus data' });
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      Swal.close();
-      Swal.fire({ icon: 'error', title: 'Error!', text: 'Gagal menghapus: ' + error.message });
+    } else {
+      // Gagal dari server
+      throw new Error(responseData?.message || `HTTP error ${response.status}`);
     }
+
+  } catch (error) {
+    console.error('❌ Delete error:', error);
+    
+    // Tutup loading jika masih ada
+    Swal.close();
+    
+    // Tampilkan error
+    await Swal.fire({
+      icon: 'error',
+      title: 'Gagal!',
+      text: error.message || 'Terjadi kesalahan saat menghapus data'
+    });
   }
 }
 

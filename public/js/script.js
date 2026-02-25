@@ -113,7 +113,7 @@ async function editData(id) {
     });
     
     // Fetch data dari API
-    const response = await fetch(`/hypernet-lippo/data/${id}`);
+    const response = await fetch(`/hypernet-lippo/web/data/${id}`);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const result = await response.json();

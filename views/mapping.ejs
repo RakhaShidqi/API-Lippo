@@ -230,7 +230,7 @@
         </div>
         
         <!-- Form Mapping -->
-        <form id="mappingForm" action="/hypernet-lippo/save-mapping" method="POST">
+        <form id="mappingForm" action="/hypernet-lippo/web/mapping/save" method="POST">
           <input type="hidden" name="fileName" value="<%= fileName %>">
           <input type="hidden" name="fileType" value="<%= fileType || 'csv' %>">
           
@@ -305,7 +305,7 @@
           </div>
           
           <div>
-            <a href="/lippo" class="btn-back me-2">
+            <a href="hypernet-lippo/web/dashboard" class="btn-back me-2">
               <i class="bi bi-arrow-left"></i> Kembali
             </a>
             <button type="submit" form="mappingForm" class="btn-submit" id="submitBtn">

@@ -102,6 +102,7 @@ router.get("/web/dashboard", checkWebLogin, (req, res) => {
 
 // 🔐 Web routes lainnya - WAJIB LOGIN
 router.get("/web/data", checkWebLogin, limiter, lippoController.getAllData);
+router.get("/web/data/:id", checkWebLogin, limiter, lippoController.getDataById);
 router.get("/web/customer/idCustomer", checkWebLogin, limiter, lippoController.getDataByIdCustomer);
 router.get("/web/mall/all", checkWebLogin, limiter, lippoController.getAllData);
 router.get("/web/mall/mallName", checkWebLogin, limiter, lippoController.getDataByMall);

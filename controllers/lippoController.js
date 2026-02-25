@@ -137,6 +137,109 @@ exports.getAllData = async (req, res, next) => {
   }
 };
 
+// GET DATA BY NO (Single Record)
+exports.getDataById = async (req, res, next) => {
+  try {
+    // DEBUG: Lihat semua parameter yang diterima
+    console.log("🔍 ===== DEBUG GET DATA BY ID =====");
+    console.log("📌 req.params:", req.params);
+    console.log("📌 req.query:", req.query);
+    console.log("📌 req.path:", req.path);
+    console.log("📌 req.url:", req.url);
+    console.log("📌 req.headers.accept:", req.headers.accept);
+    
+    const id = req.params.id;
+    console.log("📌 ID dari params:", id);
+
+    if (!id) {
+      console.log("❌ ID tidak ditemukan di params!");
+      return res.status(400).json({ 
+        success: false, 
+        message: "ID wajib diisi" 
+      });
+    }
+
+    console.log(`🔍 Mencari data dengan ID: ${id}`);
+
+    // Coba cari di database - sesuaikan dengan struktur tabel Anda
+    const [rows] = await db.query(
+      "SELECT * FROM revenue WHERE no = ? OR id = ?", 
+      [id, id]
+    );
+
+    console.log(`📊 Hasil query: ${rows.length} row(s) ditemukan`);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Data dengan ID ${id} tidak ditemukan`
+      });
+    }
+
+    // Cek apakah request menginginkan JSON atau HTML
+    if (req.headers.accept === 'application/json') {
+      return res.json({ 
+        success: true, 
+        data: rows[0]
+      });
+    } else {
+      // Render HTML jika bukan request JSON
+      return res.render("data-detail", {
+        title: `Detail Data #${id}`,
+        data: rows[0],
+        user: req.user
+      });
+    }
+
+  } catch (err) {
+    console.error("🔥 Error getDataById:", err);
+    console.error("🔥 Stack trace:", err.stack);
+    res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
+  }
+};
+
+// EXPORT DATA berdasarkan parameter NO (Single Record)
+// GET DATA BY ID (untuk route /web/data/:id)
+exports.getDataById = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "ID wajib diisi" 
+      });
+    }
+
+    console.log(`🔍 Mencari data dengan ID: ${id}`);
+
+    // Query ke database - sesuaikan nama tabel dan kolom dengan database Anda
+    const [rows] = await db.query(
+      "SELECT * FROM revenue WHERE no = ?", 
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Data dengan ID ${id} tidak ditemukan`
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      data: rows[0]
+    });
+
+  } catch (err) {
+    console.error("🔥 Error getDataById:", err.message);
+    next(err);
+  }
+};
+
 // ==========================
 // Get Data by ID Customer
 // ==========================
@@ -582,7 +685,7 @@ exports.saveMapping = async (req, res, next) => {
         cleanupFile(filePath);
         
         // Redirect ke halaman lippo
-        return res.redirect("/lippo");
+        return res.redirect("/hypernet-lippo/web/dashboard");
       } else {
         throw new Error(insertResult.message);
       }

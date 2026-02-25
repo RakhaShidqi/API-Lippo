@@ -300,6 +300,119 @@ async function saveEdit() {
 // ==========================
 // 🔥 FUNGSI DELETE DATA
 // ==========================
+// async function deleteData(id) {
+//   console.log('🗑️ Deleting data ID:', id);
+  
+//   // Konfirmasi dengan SweetAlert
+//   const result = await Swal.fire({
+//     title: 'Hapus Data',
+//     text: 'Apakah Anda yakin ingin menghapus data ini?',
+//     icon: 'warning',
+//     showCancelButton: true,
+//     confirmButtonColor: '#d33',
+//     cancelButtonColor: '#3085d6',
+//     confirmButtonText: 'Ya, hapus!',
+//     cancelButtonText: 'Batal',
+//     reverseButtons: true
+//   });
+  
+//   if (!result.isConfirmed) return;
+
+//   try {
+//     // Tampilkan loading
+//     Swal.fire({
+//       title: 'Menghapus...',
+//       text: 'Mohon tunggu',
+//       allowOutsideClick: false,
+//       didOpen: () => Swal.showLoading()
+//     });
+
+//     // 1. TAMBAHKAN BASE URL
+//     const baseUrl = 'http://localhost:4000'; // Sesuaikan dengan port server Anda
+//     const url = `${baseUrl}/hypernet-lippo/data/${id}`;
+    
+//     console.log('📡 Request URL:', url);
+
+//     // 2. TAMBAHKAN HEADERS (termasuk token)
+//     const headers = {
+//       'Accept': 'application/json',
+//       'Content-Type': 'application/json'
+//     };
+
+//     // Ambil token dari localStorage (sesuaikan dengan cara auth Anda)
+//     const token = localStorage.getItem('token');
+//     if (token) {
+//       headers['Authorization'] = `Bearer ${token}`;
+//       console.log('🔑 Token added to request');
+//     } else {
+//       console.warn('⚠️ No token found in localStorage');
+//     }
+
+//     // 3. KIRIM REQUEST DELETE
+//     const response = await fetch(url, {
+//       method: 'DELETE',
+//       headers: headers,
+//       credentials: 'include' // Jika menggunakan cookies/session
+//     });
+
+//     console.log('📥 Response status:', response.status);
+
+//     // 4. HANDLE RESPONSE
+//     let responseData;
+//     const contentType = response.headers.get('content-type');
+    
+//     if (contentType && contentType.includes('application/json')) {
+//       responseData = await response.json();
+//       console.log('📦 Response data:', responseData);
+//     } else {
+//       // Jika response bukan JSON
+//       const textResponse = await response.text();
+//       console.log('📝 Text response:', textResponse);
+      
+//       if (response.ok) {
+//         responseData = { success: true, message: 'Data berhasil dihapus' };
+//       } else {
+//         throw new Error(`Server returned: ${textResponse.substring(0, 100)}`);
+//       }
+//     }
+
+//     // Tutup loading
+//     Swal.close();
+
+//     // 5. CEK RESPONSE
+//     if (response.ok && (responseData?.success || responseData?.success !== false)) {
+//       // Sukses
+//       await Swal.fire({
+//         icon: 'success',
+//         title: 'Berhasil!',
+//         text: 'Data berhasil dihapus',
+//         timer: 1500,
+//         showConfirmButton: false
+//       });
+      
+//       // Refresh data
+//       refreshData();
+      
+//     } else {
+//       // Gagal dari server
+//       throw new Error(responseData?.message || `HTTP error ${response.status}`);
+//     }
+
+//   } catch (error) {
+//     console.error('❌ Delete error:', error);
+    
+//     // Tutup loading jika masih ada
+//     Swal.close();
+    
+//     // Tampilkan error
+//     await Swal.fire({
+//       icon: 'error',
+//       title: 'Gagal!',
+//       text: error.message || 'Terjadi kesalahan saat menghapus data'
+//     });
+//   }
+// }
+
 async function deleteData(id) {
   console.log('🗑️ Deleting data ID:', id);
   
@@ -327,61 +440,54 @@ async function deleteData(id) {
       didOpen: () => Swal.showLoading()
     });
 
-    // 1. TAMBAHKAN BASE URL
-    const baseUrl = 'http://localhost:4000'; // Sesuaikan dengan port server Anda
+    // ========== INI PERUBAHANNYA ==========
+    // Dapatkan base URL secara dinamis
+    const baseUrl = getBaseUrl();
     const url = `${baseUrl}/hypernet-lippo/data/${id}`;
     
+    console.log('📍 Hostname:', window.location.hostname);
     console.log('📡 Request URL:', url);
 
-    // 2. TAMBAHKAN HEADERS (termasuk token)
+    // Headers
     const headers = {
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     };
 
-    // Ambil token dari localStorage (sesuaikan dengan cara auth Anda)
     const token = localStorage.getItem('token');
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-      console.log('🔑 Token added to request');
-    } else {
-      console.warn('⚠️ No token found in localStorage');
+      console.log('🔑 Token added');
     }
 
-    // 3. KIRIM REQUEST DELETE
+    // Kirim request
     const response = await fetch(url, {
       method: 'DELETE',
       headers: headers,
-      credentials: 'include' // Jika menggunakan cookies/session
+      credentials: 'include',
+      mode: 'cors' // Penting untuk CORS
     });
 
     console.log('📥 Response status:', response.status);
 
-    // 4. HANDLE RESPONSE
+    // Handle response (sama seperti sebelumnya)
     let responseData;
     const contentType = response.headers.get('content-type');
     
     if (contentType && contentType.includes('application/json')) {
       responseData = await response.json();
-      console.log('📦 Response data:', responseData);
     } else {
-      // Jika response bukan JSON
       const textResponse = await response.text();
-      console.log('📝 Text response:', textResponse);
-      
       if (response.ok) {
-        responseData = { success: true, message: 'Data berhasil dihapus' };
+        responseData = { success: true };
       } else {
-        throw new Error(`Server returned: ${textResponse.substring(0, 100)}`);
+        throw new Error(`Server error: ${textResponse.substring(0, 100)}`);
       }
     }
 
-    // Tutup loading
     Swal.close();
 
-    // 5. CEK RESPONSE
-    if (response.ok && (responseData?.success || responseData?.success !== false)) {
-      // Sukses
+    if (response.ok) {
       await Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
@@ -389,28 +495,60 @@ async function deleteData(id) {
         timer: 1500,
         showConfirmButton: false
       });
-      
-      // Refresh data
       refreshData();
-      
     } else {
-      // Gagal dari server
       throw new Error(responseData?.message || `HTTP error ${response.status}`);
     }
 
   } catch (error) {
-    console.error('❌ Delete error:', error);
-    
-    // Tutup loading jika masih ada
+    console.error('❌ Error:', error);
     Swal.close();
     
-    // Tampilkan error
+    // Pesan error yang lebih informatif
+    let errorMessage = error.message;
+    if (error.message.includes('Failed to fetch')) {
+      errorMessage = 'Tidak dapat terhubung ke server. Pastikan server menyala dan CORS sudah diatur.';
+    }
+    
     await Swal.fire({
       icon: 'error',
       title: 'Gagal!',
-      text: error.message || 'Terjadi kesalahan saat menghapus data'
+      text: errorMessage
     });
   }
+}
+
+// ========== FUNGSI HELPER ==========
+
+// Fungsi untuk mendapatkan base URL yang benar
+function getBaseUrl() {
+  const { hostname, protocol } = window.location;
+  
+  // Jika di localhost
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:4000';
+  }
+  
+  // Jika di IP/domain (misal 192.168.1.100)
+  // Gunakan hostname yang sama dengan port 4000
+  return `${protocol}//${hostname}:4000`;
+}
+
+// Atau versi yang lebih fleksibel (bisa disimpan di localStorage)
+function getApiUrl() {
+  // Cek apakah sudah pernah disimpan
+  const savedUrl = localStorage.getItem('apiBaseUrl');
+  if (savedUrl) return savedUrl;
+  
+  // Deteksi otomatis
+  const { hostname } = window.location;
+  const apiUrl = hostname === 'localhost' || hostname === '127.0.0.1' 
+    ? 'http://localhost:4000'
+    : `http://${hostname}:4000`;
+  
+  // Simpan untuk penggunaan berikutnya
+  localStorage.setItem('apiBaseUrl', apiUrl);
+  return apiUrl;
 }
 
 // ==========================

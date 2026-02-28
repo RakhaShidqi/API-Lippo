@@ -124,6 +124,7 @@ router.get("/api/mall/mallName", auth, limiter, lippoController.getDataByMallVia
 router.get("/api/mall/period", auth, limiter, lippoController.getDataByPeriodViaApi);
 router.get("/api/customer/customerName", auth, limiter, lippoController.getDataByCustomerViaApi);
 router.get("/api/tenant/tenantName", auth, limiter, lippoController.getDataByTenantViaApi);
+router.get("/api/status/statusPayment", auth, limiter, lippoController.getDataByStatusViaApi);
 
 router.post("/api/upload", auth, upload.single("file"), lippoController.uploadFile);
 router.post("/api/mapping/save", auth, lippoController.saveMapping);

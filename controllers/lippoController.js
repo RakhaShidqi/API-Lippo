@@ -634,6 +634,58 @@ exports.getDataByPeriodViaApi = async (req, res, next) => {
   }
 };
 
+// Get Data By Status Payment
+exports.getDataByStatusViaApi = async (req, res, next) => {
+  try {
+    const statusPayment = req.params.statusPayment || req.query.statusPayment;
+
+    if (!statusPayment) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Status Payment is required" 
+      });
+    }
+
+    console.log("🔍 Searching for Status Payment:", statusPayment);
+
+    // PERBAIKAN: Query dengan kolom yang dipilih, kecualikan unique_id
+    const [rows] = await db.query(
+      `SELECT 
+        no, 
+        id_customer, 
+        customer_name, 
+        tenant_name, 
+        mall_name, 
+        ship_address,
+        tgl_wo_address_request, 
+        bast_date, 
+        status, 
+        start, 
+        end, 
+        period, 
+        month, 
+        price_per_month, 
+        status_payment, 
+        rev_lmi, 
+        rev_mall
+      FROM revenue 
+      WHERE status_payment LIKE ? 
+      ORDER BY no ASC`, 
+      [`%${statusPayment}%`]
+    );
+
+    res.json({ 
+      success: true, 
+      count: rows.length,
+      data: rows 
+    });
+
+  } catch (err) {
+    console.error("🔥 Fetch by status payment error:", err.message);
+    next(err);
+  }
+};
+
 // ==========================
 // SEARCH DATA (Multi-field search)
 // ==========================

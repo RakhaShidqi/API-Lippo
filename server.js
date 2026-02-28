@@ -30,7 +30,11 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:4000',
       'http://127.0.0.1:4000',
-      'http://api-lmi.hypernet.co.id'
+      'https://10.254.245.2',
+      'https://10.254.245.2:4000',
+      'http://api-lmi.hypernet.co.id',
+      'http://api-lmi.hypernet.co.id:4000',
+      'https://api-lmi.hypernet.co.id',
       // Tambahkan domain production di sini
     ];
     
@@ -282,7 +286,7 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================
 const PORT = process.env.PORT || 4000;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '0.0.0.0';
 
 const server = app.listen(PORT, HOST, () => {
   console.log(`\n🚀 ========================================`);

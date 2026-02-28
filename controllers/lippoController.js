@@ -9,7 +9,7 @@ const { normalizeDate } = require("../utils/dateHelper");
 let cachedResults = [];
 
 // ==========================
-// Insert Data Manual (from form / API)
+// INSERT DATA MANUAL (from form / API)
 // ==========================
 exports.addData = async (req, res, next) => {
   try {
@@ -79,22 +79,21 @@ exports.addData = async (req, res, next) => {
 };
 
 // ==========================
-// Get All Data
+// GET ALL DATA
 // ==========================
+
 exports.getAllData = async (req, res, next) => {
   try {
     const [rows] = await db.query(`
       SELECT 
-        no, 
-        unique_id, 
+        no,
+        unique_id,  
         id_customer, 
         customer_name, 
         tenant_name, 
         mall_name, 
         ship_address,
-        tgl_wo_address_request, 
         bast_date, 
-        status, 
         start, 
         end, 
         period, 
@@ -104,105 +103,61 @@ exports.getAllData = async (req, res, next) => {
         rev_lmi, 
         rev_mall
       FROM revenue 
-      ORDER BY no DESC
+      ORDER BY no ASC
     `);
 
-    const data = rows.map((row) => ({
-      no: row.no,
-      uniqueId: row.unique_id,
-      idCustomer: row.id_customer,
-      customerName: row.customer_name,
-      tenantName: row.tenant_name,
-      mallName: row.mall_name,
-      shipAddress: row.ship_address,
-      tglWOAdressRequest: row.tgl_wo_address_request
-        ? formatDate(row.tgl_wo_address_request)
-        : "",
-      bastDate: row.bast_date ? formatDate(row.bast_date) : "",
-      status: row.status,
-      start: row.start ? formatDate(row.start) : "",
-      end: row.end ? formatDate(row.end) : "",
-      period: row.period,
-      month: row.month,
-      pricePerMonth: row.price_per_month,
-      statusPayment: row.status_payment,
-      revLMI: row.rev_lmi,
-      revMall: row.rev_mall,
-    }));
-
-    res.json({ success: true, count: data.length, data });
+    // KIRIM APA ADANYA, jangan diubah
+    res.json({ 
+      success: true, 
+      count: rows.length, 
+      data: rows 
+    });
+    
   } catch (err) {
     console.error("🔥 Fetch all error:", err.message);
     next(err);
   }
 };
 
-// GET DATA BY NO (Single Record)
-exports.getDataById = async (req, res, next) => {
+exports.getAllDataViaApi = async (req, res, next) => {
   try {
-    // DEBUG: Lihat semua parameter yang diterima
-    console.log("🔍 ===== DEBUG GET DATA BY ID =====");
-    console.log("📌 req.params:", req.params);
-    console.log("📌 req.query:", req.query);
-    console.log("📌 req.path:", req.path);
-    console.log("📌 req.url:", req.url);
-    console.log("📌 req.headers.accept:", req.headers.accept);
-    
-    const id = req.params.id;
-    console.log("📌 ID dari params:", id);
+    const [rows] = await db.query(`
+      SELECT 
+        no,  
+        id_customer, 
+        customer_name, 
+        tenant_name, 
+        mall_name, 
+        ship_address,
+        bast_date, 
+        start, 
+        end, 
+        period, 
+        month, 
+        price_per_month, 
+        status_payment, 
+        rev_lmi, 
+        rev_mall
+      FROM revenue 
+      ORDER BY no ASC
+    `);
 
-    if (!id) {
-      console.log("❌ ID tidak ditemukan di params!");
-      return res.status(400).json({ 
-        success: false, 
-        message: "ID wajib diisi" 
-      });
-    }
-
-    console.log(`🔍 Mencari data dengan ID: ${id}`);
-
-    // Coba cari di database - sesuaikan dengan struktur tabel Anda
-    const [rows] = await db.query(
-      "SELECT * FROM revenue WHERE no = ? OR id = ?", 
-      [id, id]
-    );
-
-    console.log(`📊 Hasil query: ${rows.length} row(s) ditemukan`);
-
-    if (rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: `Data dengan ID ${id} tidak ditemukan`
-      });
-    }
-
-    // Cek apakah request menginginkan JSON atau HTML
-    if (req.headers.accept === 'application/json') {
-      return res.json({ 
-        success: true, 
-        data: rows[0]
-      });
-    } else {
-      // Render HTML jika bukan request JSON
-      return res.render("data-detail", {
-        title: `Detail Data #${id}`,
-        data: rows[0],
-        user: req.user
-      });
-    }
-
-  } catch (err) {
-    console.error("🔥 Error getDataById:", err);
-    console.error("🔥 Stack trace:", err.stack);
-    res.status(500).json({ 
-      success: false, 
-      message: err.message 
+    // KIRIM APA ADANYA, jangan diubah
+    res.json({ 
+      success: true, 
+      count: rows.length, 
+      data: rows 
     });
+    
+  } catch (err) {
+    console.error("🔥 Fetch all error:", err.message);
+    next(err);
   }
 };
 
-// EXPORT DATA berdasarkan parameter NO (Single Record)
-// GET DATA BY ID (untuk route /web/data/:id)
+// ==========================
+// GET DATA BY ID (Single Record)
+// ==========================
 exports.getDataById = async (req, res, next) => {
   try {
     const id = req.params.id;
@@ -216,7 +171,7 @@ exports.getDataById = async (req, res, next) => {
 
     console.log(`🔍 Mencari data dengan ID: ${id}`);
 
-    // Query ke database - sesuaikan nama tabel dan kolom dengan database Anda
+    // Query ke database
     const [rows] = await db.query(
       "SELECT * FROM revenue WHERE no = ?", 
       [id]
@@ -239,13 +194,70 @@ exports.getDataById = async (req, res, next) => {
     next(err);
   }
 };
+exports.getDataByIdViaApi = async (req, res, next, includeUniqueId = true) => {
+  try {
+    const id = req.params.id;
+
+    if (!id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "ID wajib diisi" 
+      });
+    }
+
+    console.log(`🔍 Mencari data dengan ID: ${id}, includeUniqueId: ${includeUniqueId}`);
+
+    // Query dinamis berdasarkan parameter
+    let query;
+    if (includeUniqueId) {
+      query = "SELECT * FROM revenue WHERE no = ?";
+    } else {
+      query = `SELECT 
+        no, 
+        id_customer, 
+        customer_name, 
+        tenant_name, 
+        mall_name, 
+        ship_address,
+        tgl_wo_address_request, 
+        bast_date, 
+        status, 
+        start, 
+        end, 
+        period, 
+        month, 
+        price_per_month, 
+        status_payment, 
+        rev_lmi, 
+        rev_mall
+      FROM revenue WHERE no = ?`;
+    }
+
+    const [rows] = await db.query(query, [id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Data dengan ID ${id} tidak ditemukan`
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      data: rows[0]
+    });
+
+  } catch (err) {
+    console.error("🔥 Error getDataById:", err.message);
+    next(err);
+  }
+};
 
 // ==========================
-// Get Data by ID Customer
+// GET DATA BY ID CUSTOMER
 // ==========================
 exports.getDataByIdCustomer = async (req, res, next) => {
   try {
-    // Dukung path parameter ATAU query parameter
     const idCustomer = req.params.idCustomer || req.query.idCustomer;
 
     if (!idCustomer) {
@@ -258,7 +270,58 @@ exports.getDataByIdCustomer = async (req, res, next) => {
     console.log("🔍 Searching for ID Customer:", idCustomer);
 
     const [rows] = await db.query(
-      "SELECT * FROM revenue WHERE id_customer LIKE ? ORDER BY no DESC", 
+      "SELECT * FROM revenue WHERE id_customer LIKE ? ORDER BY no ASC", 
+      [`%${idCustomer}%`]
+    );
+
+    res.json({ 
+      success: true, 
+      count: rows.length,
+      data: rows 
+    });
+
+  } catch (err) {
+    console.error("🔥 Fetch by ID Customer error:", err.message);
+    next(err);
+  }
+};
+
+exports.getDataByIdCustomerViaApi = async (req, res, next) => {
+  try {
+    const idCustomer = req.params.idCustomer || req.query.idCustomer;
+
+    if (!idCustomer) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "ID Customer is required" 
+      });
+    }
+
+    console.log("🔍 Searching for ID Customer:", idCustomer);
+
+    // PERBAIKAN: Query dengan kolom yang dipilih, kecualikan unique_id
+    const [rows] = await db.query(
+      `SELECT 
+        no, 
+        id_customer, 
+        customer_name, 
+        tenant_name, 
+        mall_name, 
+        ship_address,
+        tgl_wo_address_request, 
+        bast_date, 
+        status, 
+        start, 
+        end, 
+        period, 
+        month, 
+        price_per_month, 
+        status_payment, 
+        rev_lmi, 
+        rev_mall
+      FROM revenue 
+      WHERE id_customer LIKE ? 
+      ORDER BY no ASC`, 
       [`%${idCustomer}%`]
     );
 
@@ -275,7 +338,7 @@ exports.getDataByIdCustomer = async (req, res, next) => {
 };
 
 // ==========================
-// Get Data by mall_name
+// GET DATA BY MALL NAME
 // ==========================
 exports.getDataByMall = async (req, res, next) => {
   try {
@@ -286,7 +349,7 @@ exports.getDataByMall = async (req, res, next) => {
     }
 
     const [rows] = await db.query(
-      "SELECT * FROM revenue WHERE mall_name LIKE ? ORDER BY no DESC", 
+      "SELECT * FROM revenue WHERE mall_name LIKE ? ORDER BY no ASC", 
       [`%${mallName}%`]
     );
     
@@ -301,8 +364,56 @@ exports.getDataByMall = async (req, res, next) => {
   }
 };
 
+exports.getDataByMallViaApi = async (req, res, next) => {
+  try {
+    const { mallName } = req.query;
+
+    if (!mallName) {
+      return res.status(400).json({ success: false, message: "Mall name is required" });
+    }
+
+    console.log("🔍 Searching for Mall Name:", mallName);
+
+    // PERBAIKAN: Query dengan kolom yang dipilih, kecualikan unique_id
+    const [rows] = await db.query(
+      `SELECT 
+        no, 
+        id_customer, 
+        customer_name, 
+        tenant_name, 
+        mall_name, 
+        ship_address,
+        tgl_wo_address_request, 
+        bast_date, 
+        status, 
+        start, 
+        end, 
+        period, 
+        month, 
+        price_per_month, 
+        status_payment, 
+        rev_lmi, 
+        rev_mall
+      FROM revenue 
+      WHERE mall_name LIKE ? 
+      ORDER BY no ASC`, 
+      [`%${mallName}%`]
+    );
+    
+    res.json({ 
+      success: true, 
+      count: rows.length,
+      data: rows 
+    });
+  } catch (err) {
+    console.error("🔥 Fetch mall error:", err.message);
+    next(err);
+  }
+};
+
+
 // ==========================
-// Get Data by customer_name
+// GET DATA BY CUSTOMER NAME
 // ==========================
 exports.getDataByCustomer = async (req, res, next) => {
   try {
@@ -313,7 +424,54 @@ exports.getDataByCustomer = async (req, res, next) => {
     }
 
     const [rows] = await db.query(
-      "SELECT * FROM revenue WHERE customer_name LIKE ? ORDER BY no DESC", 
+      "SELECT * FROM revenue WHERE customer_name LIKE ? ORDER BY no ASC", 
+      [`%${customerName}%`]
+    );
+    
+    res.json({ 
+      success: true, 
+      count: rows.length,
+      data: rows 
+    });
+  } catch (err) {
+    console.error("🔥 Fetch customer error:", err.message);
+    next(err);
+  }
+};
+
+exports.getDataByCustomerViaApi = async (req, res, next) => {
+  try {
+    const { customerName } = req.query;
+    
+    if (!customerName) {
+      return res.status(400).json({ success: false, message: "Customer name is required" });
+    }
+
+    console.log("🔍 Searching for Customer Name:", customerName);
+
+    // PERBAIKAN: Query dengan kolom yang dipilih, kecualikan unique_id
+    const [rows] = await db.query(
+      `SELECT 
+        no, 
+        id_customer, 
+        customer_name, 
+        tenant_name, 
+        mall_name, 
+        ship_address,
+        tgl_wo_address_request, 
+        bast_date, 
+        status, 
+        start, 
+        end, 
+        period, 
+        month, 
+        price_per_month, 
+        status_payment, 
+        rev_lmi, 
+        rev_mall
+      FROM revenue 
+      WHERE customer_name LIKE ? 
+      ORDER BY no ASC`, 
       [`%${customerName}%`]
     );
     
@@ -329,7 +487,81 @@ exports.getDataByCustomer = async (req, res, next) => {
 };
 
 // ==========================
-// Get Data by period
+// GET DATA BY TENANT NAME
+// ==========================
+exports.getDataByTenant = async (req, res, next) => {
+  try {
+    const { tenantName } = req.query;
+    
+    if (!tenantName) {
+      return res.status(400).json({ success: false, message: "Tenant name is required" });
+    }
+
+    const [rows] = await db.query(
+      "SELECT * FROM revenue WHERE tenant_name LIKE ? ORDER BY no ASC", 
+      [`%${tenantName}%`]
+    );
+    
+    res.json({ 
+      success: true, 
+      count: rows.length,
+      data: rows 
+    });
+  } catch (err) {
+    console.error("🔥 Fetch tenant error:", err.message);
+    next(err);
+  }
+};
+
+exports.getDataByTenantViaApi = async (req, res, next) => {
+  try {
+    const { tenantName } = req.query;
+    
+    if (!tenantName) {
+      return res.status(400).json({ success: false, message: "Tenant name is required" });
+    }
+
+    console.log("🔍 Searching for Tenant Name:", tenantName);
+
+    // PERBAIKAN: Query dengan kolom yang dipilih, kecualikan unique_id
+    const [rows] = await db.query(
+      `SELECT 
+        no, 
+        id_customer, 
+        customer_name, 
+        tenant_name, 
+        mall_name, 
+        ship_address,
+        tgl_wo_address_request, 
+        bast_date, 
+        status, 
+        start, 
+        end, 
+        period, 
+        month, 
+        price_per_month, 
+        status_payment, 
+        rev_lmi, 
+        rev_mall
+      FROM revenue 
+      WHERE tenant_name LIKE ? 
+      ORDER BY no ASC`, 
+      [`%${tenantName}%`]
+    );
+    
+    res.json({ 
+      success: true, 
+      count: rows.length,
+      data: rows 
+    });
+  } catch (err) {
+    console.error("🔥 Fetch tenant error:", err.message);
+    next(err);
+  }
+};
+
+// ==========================
+// GET DATA BY PERIOD
 // ==========================
 exports.getDataByPeriod = async (req, res, next) => {
   try {
@@ -340,7 +572,54 @@ exports.getDataByPeriod = async (req, res, next) => {
     }
 
     const [rows] = await db.query(
-      "SELECT * FROM revenue WHERE period LIKE ? ORDER BY no DESC", 
+      "SELECT * FROM revenue WHERE period LIKE ? ORDER BY no ASC", 
+      [`%${period}%`]
+    );
+    
+    res.json({ 
+      success: true, 
+      count: rows.length,
+      data: rows 
+    });
+  } catch (err) {
+    console.error("🔥 Fetch period error:", err.message);
+    next(err);
+  }
+};
+
+exports.getDataByPeriodViaApi = async (req, res, next) => {
+  try {
+    const { period } = req.query;
+    
+    if (!period) {
+      return res.status(400).json({ success: false, message: "Period is required" });
+    }
+
+    console.log("🔍 Searching for Period:", period);
+
+    // PERBAIKAN: Query dengan kolom yang dipilih, kecualikan unique_id
+    const [rows] = await db.query(
+      `SELECT 
+        no, 
+        id_customer, 
+        customer_name, 
+        tenant_name, 
+        mall_name, 
+        ship_address,
+        tgl_wo_address_request, 
+        bast_date, 
+        status, 
+        start, 
+        end, 
+        period, 
+        month, 
+        price_per_month, 
+        status_payment, 
+        rev_lmi, 
+        rev_mall
+      FROM revenue 
+      WHERE period LIKE ? 
+      ORDER BY no ASC`, 
       [`%${period}%`]
     );
     
@@ -356,55 +635,119 @@ exports.getDataByPeriod = async (req, res, next) => {
 };
 
 // ==========================
-// Update Data
+// SEARCH DATA (Multi-field search)
+// ==========================
+exports.searchData = async (req, res, next) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.length < 2) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Search term minimal 2 karakter" 
+      });
+    }
+
+    const searchTerm = `%${q}%`;
+    
+    const [rows] = await db.query(`
+      SELECT * FROM revenue 
+      WHERE 
+        unique_id LIKE ? OR
+        id_customer LIKE ? OR
+        customer_name LIKE ? OR
+        tenant_name LIKE ? OR
+        mall_name LIKE ? OR
+        period LIKE ?
+      ORDER BY no ASC
+    `, [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm]);
+    
+    res.json({ 
+      success: true, 
+      count: rows.length,
+      data: rows 
+    });
+  } catch (err) {
+    console.error("🔥 Search error:", err.message);
+    next(err);
+  }
+};
+
+// ==========================
+// UPDATE DATA - PERTAHANKAN NILAI LAMA
 // ==========================
 exports.updateData = async (req, res, next) => {
   try {
     const { id } = req.params;
     const d = req.body;
 
+    console.log('📝 Update request:', d);
+
     if (!id) {
       return res.status(400).json({ success: false, message: "ID is required" });
     }
 
-    // Cek data exists
-    const [existing] = await db.query("SELECT no FROM revenue WHERE no = ?", [id]);
+    // PERBAIKAN: Ambil data lama dulu
+    const [existing] = await db.query("SELECT * FROM revenue WHERE no = ?", [id]);
     if (existing.length === 0) {
       return res.status(404).json({ success: false, message: "Data not found" });
     }
 
+    const oldData = existing[0];
+    console.log('📦 Data lama:', oldData);
+
+    // PERBAIKAN: Gunakan nilai baru jika ada, jika tidak pakai nilai lama
     const sql = `UPDATE revenue SET
-      unique_id = ?, id_customer = ?, customer_name = ?, tenant_name = ?, mall_name = ?, ship_address = ?,
-      tgl_wo_address_request = ?, bast_date = ?, status = ?, start = ?, end = ?,
-      period = ?, month = ?, price_per_month = ?, status_payment = ?, rev_lmi = ?, rev_mall = ?
+      unique_id = ?, 
+      id_customer = ?, 
+      customer_name = ?, 
+      tenant_name = ?, 
+      mall_name = ?, 
+      ship_address = ?,
+      tgl_wo_address_request = ?, 
+      bast_date = ?, 
+      status = ?, 
+      start = ?, 
+      end = ?,
+      period = ?, 
+      month = ?, 
+      price_per_month = ?, 
+      status_payment = ?, 
+      rev_lmi = ?, 
+      rev_mall = ?
       WHERE no = ?`;
 
     const values = [
-      d.uniqueId,
-      d.idCustomer,
-      d.customerName,
-      d.tenantName || null,
-      d.mallName || null,
-      d.shipAddress || null,
-      normalizeDate(d.tglWOAdressRequest),
-      normalizeDate(d.bastDate),
-      d.status || 'Not Posted',
-      normalizeDate(d.start),
-      normalizeDate(d.end),
-      d.period || null,
-      d.month || null,
-      d.pricePerMonth || 0,
-      d.statusPayment || 'Unpaid',
-      d.revLMI || 0,
-      d.revMall || 0,
+      d.unique_id !== undefined ? d.unique_id : oldData.unique_id,
+      d.id_customer !== undefined ? d.id_customer : oldData.id_customer,
+      d.customer_name !== undefined ? d.customer_name : oldData.customer_name,
+      d.tenant_name !== undefined ? d.tenant_name : oldData.tenant_name,
+      d.mall_name !== undefined ? d.mall_name : oldData.mall_name,
+      d.ship_address !== undefined ? d.ship_address : oldData.ship_address,
+      d.tgl_wo_address_request !== undefined ? d.tgl_wo_address_request : oldData.tgl_wo_address_request,
+      d.bast_date !== undefined ? d.bast_date : oldData.bast_date,  // PERTAHANKAN NILAI LAMA
+      d.status !== undefined ? d.status : oldData.status,
+      d.start !== undefined ? d.start : oldData.start,              // PERTAHANKAN NILAI LAMA
+      d.end !== undefined ? d.end : oldData.end,                    // PERTAHANKAN NILAI LAMA
+      d.period !== undefined ? d.period : oldData.period,
+      d.month !== undefined ? d.month : oldData.month,
+      d.price_per_month !== undefined ? d.price_per_month : oldData.price_per_month,
+      d.status_payment !== undefined ? d.status_payment : oldData.status_payment,
+      d.rev_lmi !== undefined ? d.rev_lmi : oldData.rev_lmi,
+      d.rev_mall !== undefined ? d.rev_mall : oldData.rev_mall,
       id
     ];
 
+    console.log('📤 Values untuk update:', values);
+
     await db.query(sql, values);
+
+    const [updated] = await db.query("SELECT * FROM revenue WHERE no = ?", [id]);
 
     res.json({
       success: true,
-      message: "Data successfully updated"
+      message: "Data successfully updated",
+      data: updated[0]
     });
   } catch (err) {
     console.error("🔥 Update error:", err.message);
@@ -413,7 +756,57 @@ exports.updateData = async (req, res, next) => {
 };
 
 // ==========================
-// Delete Data
+// PATCH DATA - UPDATE PARTIAL
+// ==========================
+exports.patchData = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    if (!id) {
+      return res.status(400).json({ success: false, message: "ID is required" });
+    }
+
+    if (!updates || Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: "No data to update" });
+    }
+
+    // Bangun query dinamis
+    let setClauses = [];
+    let values = [];
+
+    for (const [key, value] of Object.entries(updates)) {
+      // Mapping field names
+      const dbField = key; // Sesuaikan dengan nama kolom di database
+      setClauses.push(`${dbField} = ?`);
+      values.push(value);
+    }
+
+    values.push(id);
+
+    const sql = `UPDATE revenue SET ${setClauses.join(', ')} WHERE no = ?`;
+    
+    console.log('📝 SQL:', sql);
+    console.log('📤 Values:', values);
+
+    await db.query(sql, values);
+
+    const [updated] = await db.query("SELECT * FROM revenue WHERE no = ?", [id]);
+
+    res.json({
+      success: true,
+      message: "Data successfully updated",
+      data: updated[0]
+    });
+
+  } catch (err) {
+    console.error("🔥 Patch error:", err.message);
+    next(err);
+  }
+};
+
+// ==========================
+// DELETE DATA
 // ==========================
 exports.deleteData = async (req, res, next) => {
   try {
@@ -442,7 +835,41 @@ exports.deleteData = async (req, res, next) => {
 };
 
 // ==========================
-// 🔥 PERBAIKAN: Upload CSV/Excel → return headers
+// BULK DELETE (Delete multiple records)
+// ==========================
+exports.bulkDelete = async (req, res, next) => {
+  try {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Array of IDs is required" 
+      });
+    }
+
+    // Build placeholders for IN clause
+    const placeholders = ids.map(() => '?').join(',');
+    
+    const [result] = await db.query(
+      `DELETE FROM revenue WHERE no IN (${placeholders})`, 
+      ids
+    );
+
+    res.json({
+      success: true,
+      message: `${result.affectedRows} data successfully deleted`,
+      deletedCount: result.affectedRows
+    });
+
+  } catch (err) {
+    console.error("🔥 Bulk delete error:", err.message);
+    next(err);
+  }
+};
+
+// ==========================
+// UPLOAD FILE (CSV/Excel)
 // ==========================
 exports.uploadFile = (req, res, next) => {
   try {
@@ -469,13 +896,11 @@ exports.uploadFile = (req, res, next) => {
       ext: fileExt
     });
     
-    // Proses berdasarkan tipe file - PANGGIL FUNGSI YANG BENAR
+    // Proses berdasarkan tipe file
     if (fileExt === '.csv') {
-      // Panggil fungsi untuk proses CSV dan redirect ke mapping
       processCSVAndRedirect(filePath, fileName, req, res);
     } 
     else if (fileExt === '.xlsx' || fileExt === '.xls') {
-      // Panggil fungsi untuk proses Excel dan redirect ke mapping
       processExcelAndRedirect(filePath, fileName, req, res);
     }
     else {
@@ -496,7 +921,8 @@ exports.uploadFile = (req, res, next) => {
   }
 };
 
-// 🔥 FUNGSI BARU: Process CSV dan Redirect ke Mapping
+// ==========================
+// PROCESS CSV AND REDIRECT TO MAPPING
 // ==========================
 function processCSVAndRedirect(filePath, fileName, req, res) {
   const headers = [];
@@ -514,7 +940,7 @@ function processCSVAndRedirect(filePath, fileName, req, res) {
 
         console.log("✅ Redirecting to mapping page with headers:", headers);
         
-        // Redirect ke halaman mapping dengan data yang diperlukan
+        // Redirect ke halaman mapping
         res.render("mapping", {
           title: "Field Mapping",
           filePath: filePath,
@@ -537,7 +963,7 @@ function processCSVAndRedirect(filePath, fileName, req, res) {
 }
 
 // ==========================
-// 🔥 FUNGSI BARU: Process Excel dan Redirect ke Mapping
+// PROCESS EXCEL AND REDIRECT TO MAPPING
 // ==========================
 function processExcelAndRedirect(filePath, fileName, req, res) {
   try {
@@ -556,7 +982,7 @@ function processExcelAndRedirect(filePath, fileName, req, res) {
       header: 1,
       defval: '',
       blankrows: false,
-      range: 0 // Hanya baca baris pertama untuk headers
+      range: 0
     });
     
     if (jsonData.length === 0) {
@@ -587,7 +1013,7 @@ function processExcelAndRedirect(filePath, fileName, req, res) {
           title: "Field Mapping",
           filePath: filePath,
           fileName: fileName,
-          csvHeaders: headers, // Tetap pakai nama csvHeaders untuk kompatibilitas view
+          csvHeaders: headers,
           dbFields: dbFields,
           fileType: 'excel'
         });
@@ -606,7 +1032,7 @@ function processExcelAndRedirect(filePath, fileName, req, res) {
 }
 
 // ==========================
-// Save mapping and preview data
+// SAVE MAPPING - DIPERBAIKI
 // ==========================
 exports.saveMapping = async (req, res, next) => {
   try {
@@ -643,7 +1069,9 @@ exports.saveMapping = async (req, res, next) => {
 
     // Baca file berdasarkan ekstensi
     const fileExt = path.extname(fileName).toLowerCase();
-    let results = [];
+    
+    // PERBAIKAN: Deklarasikan results di sini
+    let results = []; // <-- PENTING: deklarasi dengan let
 
     if (fileExt === '.csv') {
       results = await parseCSVFile(filePath, mapping);
@@ -674,7 +1102,7 @@ exports.saveMapping = async (req, res, next) => {
     // Simpan ke cache
     cachedResults = results;
 
-    // ✅ AUTO INSERT KE DATABASE
+    // Auto insert ke database
     try {
       const insertResult = await insertDataToDatabase(results);
       
@@ -684,7 +1112,7 @@ exports.saveMapping = async (req, res, next) => {
         // Hapus file setelah sukses
         cleanupFile(filePath);
         
-        // Redirect ke halaman lippo
+        // Redirect ke halaman dashboard
         return res.redirect("/hypernet-lippo/web/dashboard");
       } else {
         throw new Error(insertResult.message);
@@ -692,7 +1120,6 @@ exports.saveMapping = async (req, res, next) => {
     } catch (insertErr) {
       console.error("❌ Auto-insert failed:", insertErr);
       
-      // Jika insert gagal, kirim error dengan detail
       return res.status(500).json({ 
         success: false, 
         message: `Auto-insert failed: ${insertErr.message}`,
@@ -712,7 +1139,7 @@ exports.saveMapping = async (req, res, next) => {
 };
 
 // ==========================
-// Insert mapped data to database
+// INSERT MAPPED DATA TO DATABASE
 // ==========================
 exports.insertMappedData = async (req, res, next) => {
   let connection;
@@ -754,7 +1181,8 @@ exports.insertMappedData = async (req, res, next) => {
       'month',
       'price_per_month', 
       'rev_lmi', 
-      'rev_mall'
+      'rev_mall',
+      'status_payment'
     ];
     
     let insertedCount = 0;
@@ -782,7 +1210,8 @@ exports.insertMappedData = async (req, res, next) => {
           monthValue,
           row.price_per_month || 0,
           row.rev_lmi || null,
-          row.rev_mall || 0
+          row.rev_mall || 0,
+          row.status_payment || Unpaid 
         ];
 
         const updateSet = allDatabaseFields
@@ -846,7 +1275,7 @@ exports.insertMappedData = async (req, res, next) => {
 };
 
 // ==========================
-// Clear cache
+// CLEAR CACHE
 // ==========================
 exports.clearCache = (req, res) => {
   cachedResults = [];
@@ -857,7 +1286,70 @@ exports.clearCache = (req, res) => {
 };
 
 // ==========================
-// Helper Functions
+// GET STATISTICS
+// ==========================
+exports.getStats = async (req, res, next) => {
+  try {
+    const [total] = await db.query("SELECT COUNT(*) as count FROM revenue");
+    
+    const [paid] = await db.query(
+      "SELECT COUNT(*) as count FROM revenue WHERE status_payment = 'Paid'"
+    );
+    
+    const [unpaid] = await db.query(
+      "SELECT COUNT(*) as count FROM revenue WHERE status_payment = 'Unpaid'"
+    );
+    
+    const [totalRevenue] = await db.query(
+      "SELECT SUM(price_per_month) as total FROM revenue"
+    );
+
+    res.json({
+      success: true,
+      data: {
+        total: total[0].count,
+        paid: paid[0].count,
+        unpaid: unpaid[0].count,
+        totalRevenue: totalRevenue[0].total || 0
+      }
+    });
+
+  } catch (err) {
+    console.error("🔥 Stats error:", err.message);
+    next(err);
+  }
+};
+
+// ==========================
+// EXPORT DATA (Excel)
+// ==========================
+exports.exportData = async (req, res, next) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM revenue ORDER BY no DESC");
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    
+    XLSX.utils.book_append_sheet(wb, ws, "Revenue");
+    
+    // Generate buffer
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    
+    // Set headers
+    res.setHeader('Content-Disposition', 'attachment; filename=revenue_export.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    
+    res.send(buf);
+
+  } catch (err) {
+    console.error("🔥 Export error:", err.message);
+    next(err);
+  }
+};
+
+// ==========================
+// HELPER FUNCTIONS
 // ==========================
 
 function formatDate(date) {
@@ -921,47 +1413,6 @@ function generateUniqueId(row) {
   
   return null;
 }
-
-function normalizeDateValue(val) {
-  if (!val && val !== 0) return null;
-  
-  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
-    return val;
-  }
-  
-  if (typeof val === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
-    const [d, m, y] = val.split("/");
-    return `${y}-${m}-${d}`;
-  }
-  
-  if (!isNaN(val)) {
-    const num = Number(val);
-    if (num > 40000 && num < 50000) {
-      try {
-        const date = new Date((num - 25569) * 86400 * 1000);
-        if (!isNaN(date.getTime())) {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        }
-      } catch (e) {
-        console.warn("Failed to convert Excel serial date:", val);
-      }
-    }
-  }
-  
-  if (typeof val === 'string') {
-    const date = new Date(val);
-    if (!isNaN(date.getTime())) {
-      return date.toISOString().split('T')[0];
-    }
-  }
-  
-  return null;
-}
-
-// Fungsi parseCSVFile
 async function parseCSVFile(filePath, mapping) {
   return new Promise((resolve, reject) => {
     const results = [];
@@ -1028,7 +1479,9 @@ async function parseCSVFile(filePath, mapping) {
   });
 }
 
-// Fungsi parseExcelFile
+// ==========================
+// PARSE EXCEL FILE - VERSI DIPERBAIKI (TANGGAL BENAR)
+// ==========================
 async function parseExcelFile(filePath, mapping) {
   return new Promise((resolve, reject) => {
     try {
@@ -1054,9 +1507,11 @@ async function parseExcelFile(filePath, mapping) {
       const allDatabaseFields = [
         'unique_id', 'id_customer', 'customer_name', 'tenant_name', 
         'mall_name', 'ship_address', 'bast_date', 'start', 'end', 
-        'period', 'month', 'price_per_month', 'rev_lmi', 'rev_mall'
+        'period', 'month', 'price_per_month', 'status_payment',
+        'rev_lmi', 'rev_mall'
       ];
       
+      // Mapping headers
       for (const [excelHeader, dbField] of Object.entries(mapping)) {
         if (!dbField) continue;
         
@@ -1069,53 +1524,191 @@ async function parseExcelFile(filePath, mapping) {
         }
       }
       
-      const results = dataRows.map(row => {
-        const record = {};
+      // PERBAIKAN: Fungsi konversi Excel serial ke string tanggal yang BENAR
+      function excelSerialToDateString(serial) {
+        if (!serial && serial !== 0) return '';
         
-        allDatabaseFields.forEach(field => record[field] = null);
-        
-        for (const [dbField, excelIndex] of Object.entries(dbFieldToExcelIndex)) {
-          let val = row[excelIndex];
-          record[dbField] = cleanValue(val);
+        // Jika sudah string, kembalikan apa adanya
+        if (typeof serial === 'string') {
+          return serial.trim();
         }
         
-        if (record.bast_date) record.bast_date = normalizeDateValue(record.bast_date);
-        if (record.start) record.start = normalizeDateValue(record.start);
-        if (record.end) record.end = normalizeDateValue(record.end);
+        // Jika number (Excel serial)
+        if (typeof serial === 'number' || !isNaN(parseFloat(serial))) {
+          const num = typeof serial === 'number' ? serial : parseFloat(serial);
+          
+          // Excel serial date
+          // 1 Jan 1900 = 1 (tapi Excel punya bug leap year)
+          try {
+            // PERBAIKAN: Cara yang lebih akurat untuk konversi Excel serial
+            // Gunakan UTC untuk menghindari masalah timezone
+            const date = new Date(Date.UTC(1899, 11, 30 + num));
+            
+            if (!isNaN(date.getTime())) {
+              const day = String(date.getUTCDate()).padStart(2, '0');
+              const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+              const year = date.getUTCFullYear();
+              return `${day}/${month}/${year}`; // Format DD/MM/YYYY
+            }
+          } catch (e) {
+            console.warn('Failed to convert Excel serial:', serial);
+          }
+        }
         
+        return serial ? serial.toString() : '';
+      }
+      
+      const results = [];
+      
+      // Loop setiap baris data
+      for (let i = 0; i < dataRows.length; i++) {
+        const row = dataRows[i];
+        const record = {};
+        
+        // Inisialisasi semua field dengan null
+        allDatabaseFields.forEach(field => record[field] = null);
+        
+        // Mapping values dari Excel
+        for (const [dbField, excelIndex] of Object.entries(dbFieldToExcelIndex)) {
+          if (excelIndex !== undefined && row[excelIndex] !== undefined) {
+            let val = row[excelIndex];
+            
+            // Untuk field tanggal, konversi Excel serial ke string
+            if (dbField === 'bast_date' || dbField === 'start' || dbField === 'end') {
+              record[dbField] = excelSerialToDateString(val);
+            } else {
+              record[dbField] = cleanValue(val);
+            }
+          }
+        }
+        
+        // Debug untuk baris pertama (tampilkan nilai asli dan hasil konversi)
+        if (i === 0) {
+          console.log('📅 DEBUG TANGGAL BARIS 1:');
+          console.log('   bast_date original:', row[dbFieldToExcelIndex['bast_date']]);
+          console.log('   bast_date converted:', record.bast_date);
+          console.log('   start original:', row[dbFieldToExcelIndex['start']]);
+          console.log('   start converted:', record.start);
+          console.log('   end original:', row[dbFieldToExcelIndex['end']]);
+          console.log('   end converted:', record.end);
+        }
+        
+        // Proses price_per_month
         if (record.price_per_month) {
           const strVal = record.price_per_month.toString();
           record.price_per_month = parseInt(strVal.replace(/[^0-9]/g, '')) || 0;
         }
+        
+        // Proses rev_mall
         if (record.rev_mall) {
           const strVal = record.rev_mall.toString();
           record.rev_mall = parseInt(strVal.replace(/[^0-9]/g, '')) || 0;
         }
-        if (record.period) record.period = parseInt(record.period) || 0;
         
-        if (record.month) {
-          record.month = record.month.toString().trim();
-          if (record.month.length > 50) record.month = record.month.substring(0, 50);
+        // Proses rev_lmi
+        if (record.rev_lmi) {
+          const strVal = record.rev_lmi.toString();
+          record.rev_lmi = parseInt(strVal.replace(/[^0-9]/g, '')) || 0;
         }
         
+        // Proses period
+        if (record.period) {
+          const numVal = parseInt(record.period.toString().replace(/[^0-9]/g, ''));
+          record.period = isNaN(numVal) ? record.period : numVal;
+        }
+        
+        // Proses month
+        if (record.month) {
+          record.month = record.month.toString().trim();
+        }
+        
+        // Proses status_payment
+        if (record.status_payment) {
+          const payment = record.status_payment.toString().toLowerCase().trim();
+          if (payment === 'paid' || payment === 'yes' || payment === '1' || payment === 'true') {
+            record.status_payment = 'Paid';
+          } else if (payment === 'unpaid' || payment === 'no' || payment === '0' || payment === 'false') {
+            record.status_payment = 'Unpaid';
+          } else {
+            record.status_payment = 'Unpaid';
+          }
+        } else {
+          record.status_payment = 'Unpaid';
+        }
+        
+        // Generate unique_id jika tidak ada
         if (!record.unique_id) {
           const generatedId = generateUniqueId(record);
           if (generatedId) record.unique_id = generatedId;
         }
         
-        return record;
-        
-      }).filter(row => row.customer_name || row.unique_id || row.id_customer);
+        // Hanya tambahkan jika ada data penting
+        if (record.customer_name || record.unique_id || record.id_customer) {
+          results.push(record);
+        }
+      }
+      
+      console.log(`📊 Total records parsed: ${results.length}`);
+      if (results.length > 0) {
+        console.log('📊 Sample first record:', {
+          unique_id: results[0].unique_id,
+          bast_date: results[0].bast_date,
+          start: results[0].start,
+          end: results[0].end
+        });
+      }
       
       resolve(results);
       
     } catch (err) {
+      console.error('🔥 Error parsing Excel:', err);
       reject(err);
     }
   });
 }
 
-// Fungsi insertDataToDatabase
+// ==========================
+// NORMALIZE DATE VALUE - VERSI ORIGINAL
+// ==========================
+function normalizeDateValue(val) {
+  if (!val && val !== 0) return null;
+  
+  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    return val;
+  }
+  
+  if (typeof val === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(val)) {
+    const [d, m, y] = val.split("/");
+    return `${y}-${m}-${d}`;
+  }
+  
+  if (!isNaN(val)) {
+    const num = Number(val);
+    if (num > 40000 && num < 50000) {
+      try {
+        const date = new Date((num - 25569) * 86400 * 1000);
+        if (!isNaN(date.getTime())) {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+      } catch (e) {
+        console.warn("Failed to convert Excel serial date:", val);
+      }
+    }
+  }
+  
+  if (typeof val === 'string') {
+    const date = new Date(val);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+  }
+  
+  return null;
+}
+
 async function insertDataToDatabase(data) {
   let connection;
   
@@ -1149,7 +1742,8 @@ async function insertDataToDatabase(data) {
       'month',
       'price_per_month', 
       'rev_lmi', 
-      'rev_mall'
+      'rev_mall',
+      'status_payment'
     ];
     
     let insertedCount = 0;
@@ -1174,8 +1768,9 @@ async function insertDataToDatabase(data) {
           periodValue,
           monthValue,
           row.price_per_month || 0,
-          row.rev_lmi || null,
-          row.rev_mall || 0
+          row.rev_lmi || 0,
+          row.rev_mall || 0,
+          row.status_payment || Unpaid
         ];
 
         const updateSet = allDatabaseFields

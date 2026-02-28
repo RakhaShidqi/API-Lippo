@@ -117,12 +117,13 @@ router.post("/web/cache/clear", checkWebLogin, lippoController.clearCache);
 // ======================
 // API ROUTES - WAJIB TOKEN
 // ======================
-router.get("/api/data", auth, limiter, lippoController.getAllData);
-router.get("/api/customer/idCustomer", auth, limiter, lippoController.getDataByIdCustomer);
-router.get("/api/mall/all", auth, limiter, lippoController.getAllData);
-router.get("/api/mall/mallName", auth, limiter, lippoController.getDataByMall);
-router.get("/api/mall/period", auth, limiter, lippoController.getDataByPeriod);
-router.get("/api/customer/customerName", auth, limiter, lippoController.getDataByCustomer);
+router.get("/api/data", auth, limiter, lippoController.getAllDataViaApi);
+router.get("/api/customer/idCustomer", auth, limiter, lippoController.getDataByIdCustomerViaApi);
+router.get("/api/mall/all", auth, limiter, lippoController.getAllDataViaApi);
+router.get("/api/mall/mallName", auth, limiter, lippoController.getDataByMallViaApi);
+router.get("/api/mall/period", auth, limiter, lippoController.getDataByPeriodViaApi);
+router.get("/api/customer/customerName", auth, limiter, lippoController.getDataByCustomerViaApi);
+router.get("/api/tenant/tenantName", auth, limiter, lippoController.getDataByTenantViaApi);
 
 router.post("/api/upload", auth, upload.single("file"), lippoController.uploadFile);
 router.post("/api/mapping/save", auth, lippoController.saveMapping);
@@ -132,8 +133,8 @@ router.post("/api/cache/clear", auth, lippoController.clearCache);
 // ======================
 // LEGACY ROUTES - AUTO DETECT
 // ======================
-router.get("/data", limiter, requireApiAuth, lippoController.getAllData);
-router.get("/data/:id", limiter, requireApiAuth, lippoController.getDataById);
+router.get("/data", lippoController.getAllData);
+router.get("/data/:id", lippoController.getDataById);
 router.put("/data/:id", lippoController.updateData);
 router.delete("/data/:id",lippoController.deleteData);
 router.get("/customer/idCustomer", limiter, requireApiAuth, lippoController.getDataByIdCustomer);

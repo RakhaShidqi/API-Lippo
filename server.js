@@ -127,6 +127,8 @@ app.use("/auth", authRoutes);
 // 2. Lippo Routes - untuk semua operasi data Lippo
 app.use("/hypernet-lippo", lippoRoutes);
 
+app.use("/v1", lippoRoutes);
+
 // 3. Login Routes - untuk halaman login
 app.use("/", loginRoutes);
 
@@ -134,7 +136,7 @@ app.use("/", loginRoutes);
 app.get("/hypernet-lippo", (req, res) => {
   // Cek apakah user sudah login via session
   if (!req.session.user) {
-    console.log("🔒 Unauthorized access to /lippo, redirecting to login");
+    console.log("🔒 Unauthorized access to /hypernet-lippo, redirecting to login");
     return res.redirect('/login');
   }
   
@@ -175,6 +177,7 @@ app.get("/test", (req, res) => {
     routes: {
       auth: "/auth/*",
       lippo: "/hypernet-lippo/*",
+      apiv1:"/v1/*",
       login: "/* (login pages)"
     }
   });
@@ -230,7 +233,7 @@ app.use((req, res) => {
         <body style="font-family: Arial; text-align: center; padding: 50px;">
           <h1>404 - Page Not Found</h1>
           <p>The page you are looking for does not exist.</p>
-          <p><a href="/lippo">Go to Dashboard</a> | <a href="/login">Login</a></p>
+          <p><a href="/hypernet-lippo">Go to Dashboard</a> | <a href="/login">Login</a></p>
         </body>
       </html>
     `);
